@@ -12,7 +12,6 @@ public class TorExitNodeParser {
         return torResponse.lines()
                 .filter(line -> line.startsWith("ExitAddress "))
                 .map(line -> line.split("\\s+")[1])
-                .limit(20)
                 .collect(Collectors.toUnmodifiableSet());
     }
 }

@@ -21,7 +21,7 @@ public class TorExitNodeClient {
         this.torExitNodeParser = torExitNodeParser;
     }
 
-    public String fetchExitNodes() {
+    public Set<String> fetchExitNodes() {
         String response = torRestClient.get()
                 .uri("/exit-addresses")
                 .accept(MediaType.TEXT_PLAIN)
@@ -29,11 +29,8 @@ public class TorExitNodeClient {
                 .body(String.class);
 
         Set<String> torIPAddresses = torExitNodeParser.parse(response);
+        log.info("Successfully fetched {} unique exit-node addresses from Tor API", torIPAddresses.size());
 
-        torIPAddresses.forEach(torIPAddress -> {
-            log.info(torIPAddress);
-        });
-
-        return response;
+        return torIPAddresses;
     }
 }
