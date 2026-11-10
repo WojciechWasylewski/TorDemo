@@ -20,6 +20,7 @@ public class TorExitNodeClient {
         this.torRestClient = torRestClient;
         this.torExitNodeParser = torExitNodeParser;
     }
+
     public String fetchExitNodes() {
         String response = torRestClient.get()
                 .uri("/exit-addresses")
@@ -29,7 +30,9 @@ public class TorExitNodeClient {
 
         Set<String> torIPAddresses = torExitNodeParser.parse(response);
 
-        torIPAddresses.forEach(torIPAddress -> {log.info(torIPAddress.toString());});
+        torIPAddresses.forEach(torIPAddress -> {
+            log.info(torIPAddress);
+        });
 
         return response;
     }
