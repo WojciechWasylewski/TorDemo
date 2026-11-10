@@ -1,3 +1,9 @@
 spring:
   application:
     name: TorDemo
+
+tor:
+  client:
+    base-url: https://check.torproject.org
+    connect-timeout: 5s
+    read-timeout: 10s
