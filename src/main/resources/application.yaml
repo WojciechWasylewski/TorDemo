@@ -9,3 +9,4 @@
       read-timeout: 10s
     cache:
       refresh-interval: 10m
+      ttl: 30m

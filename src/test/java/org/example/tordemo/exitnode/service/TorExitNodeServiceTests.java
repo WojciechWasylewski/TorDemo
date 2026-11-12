@@ -2,13 +2,19 @@ package org.example.tordemo.exitnode.service;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import org.example.tordemo.exitnode.config.TorCacheProperties;
+import org.junit.jupiter.api.BeforeEach;
 
 import org.example.tordemo.exitnode.client.TorExitNodeClient;
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,11 +27,21 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TorExitNodeServiceTests {
 
+    private static final Instant FETCHED_AT = Instant.parse("2026-11-12T12:00:00Z");
+    private static final Duration TTL = Duration.ofMinutes(30);
+
     @Mock
     private TorExitNodeClient client;
 
-    @InjectMocks
+    @Spy
+    private Clock clock = Clock.fixed(FETCHED_AT, ZoneOffset.UTC);
+
     private TorExitNodeService service;
+
+    @BeforeEach
+    void setUp() {
+        service = new TorExitNodeService(client, new TorCacheProperties(TTL), clock);
+    }
 
     @Test
     void shouldReportUnavailableBeforeTheFirstSuccessfulRefresh() {
@@ -109,5 +125,57 @@ class TorExitNodeServiceTests {
         service.refresh();
 
         assertThat(service.isExitNode("171.25.193.39")).isTrue();
+    }
+
+    @Test
+    void shouldUseTheSnapshotUntilJustBeforeExpiry() {
+        when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"));
+        service.refresh();
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(TTL).minusNanos(1));
+
+        assertThat(service.isExitNode("171.25.193.39")).isTrue();
+    }
+
+    @Test
+    void shouldRejectKnownAndUnknownAddressesAtExpiry() {
+        when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"));
+        service.refresh();
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(TTL));
+
+        assertThatThrownBy(() -> service.isExitNode("171.25.193.39"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
+        assertThatThrownBy(() -> service.isExitNode("192.0.2.1"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
+    }
+
+    @Test
+    void shouldNotExtendTtlWhenRefreshFails() {
+        when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"))
+                .thenThrow(new IllegalStateException("Tor is unavailable"));
+        service.refresh();
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(Duration.ofMinutes(20)));
+        assertThatThrownBy(service::refresh).isInstanceOf(IllegalStateException.class);
+        assertThat(service.isExitNode("171.25.193.39")).isTrue();
+
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(TTL));
+
+        assertThatThrownBy(() -> service.isExitNode("171.25.193.39"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
+    }
+
+    @Test
+    void shouldRenewTtlAfterSuccessfulRefreshEvenWhenAddressesAreUnchanged() {
+        when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"));
+        service.refresh();
+        Instant refreshedAt = FETCHED_AT.plus(Duration.ofMinutes(35));
+        when(clock.instant()).thenReturn(refreshedAt);
+
+        service.refresh();
+        when(clock.instant()).thenReturn(refreshedAt.plus(TTL).minusNanos(1));
+
+        assertThat(service.isExitNode("171.25.193.39")).isTrue();
+        when(clock.instant()).thenReturn(refreshedAt.plus(TTL));
+        assertThatThrownBy(() -> service.isExitNode("171.25.193.39"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
     }
 }

@@ -1,11 +1,17 @@
 package org.example.tordemo.exitnode.config;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
+import java.time.Clock;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 @Configuration
-@EnableScheduling
-@ConditionalOnProperty(name = "tor.cache.refresh-enabled", havingValue = "true", matchIfMissing = true)
+@EnableConfigurationProperties(TorCacheProperties.class)
 class TorCacheConfig {
+
+    @Bean
+    Clock torCacheClock() {
+        return Clock.systemUTC();
+    }
+
 }
