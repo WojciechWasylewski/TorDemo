@@ -1,6 +1,7 @@
 package org.example.tordemo.exitnode.api;
 
 import org.example.tordemo.exitnode.service.TorExitNodeService;
+import org.example.tordemo.exitnode.validation.IPv4;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,12 +15,12 @@ public class TorNodeCheckerController {
     }
 
     @RequestMapping(path = "/{ip}", method = RequestMethod.HEAD)
-    public ResponseEntity<Void> checkTorExitNode(@PathVariable String ip) {
+    public ResponseEntity<Void> checkTorExitNode(@PathVariable @IPv4 String ip) {
         return torExitNodeService.isExitNode(ip) ? ResponseEntity.ok().build() : ResponseEntity.notFound().build();
     }
 
     @GetMapping(path = "/{ip}")
-    public ResponseEntity<TorInfoResponse> checkTorExitNodeByIp(@PathVariable String ip) {
+    public ResponseEntity<TorInfoResponse> checkTorExitNodeByIp(@PathVariable @IPv4 String ip) {
 
         if (!torExitNodeService.isExitNode(ip)) {
             return ResponseEntity.notFound().build();
