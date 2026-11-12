@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.api;
 
+import org.example.tordemo.exitnode.api.response.TorInfoResponse;
 import org.example.tordemo.exitnode.service.TorExitNodeService;
 import org.example.tordemo.exitnode.validation.IPv4;
 import org.springframework.http.ResponseEntity;

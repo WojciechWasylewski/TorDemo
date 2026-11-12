@@ -24,7 +24,7 @@ public class TorExitNodeService {
         return snapshot.contains(ipAddress);
     }
 
-    public synchronized void refresh() {
+    synchronized void refresh() {
         Set<String> updated = Set.copyOf(torExitNodeClient.fetchExitNodes());
         if (updated.isEmpty()) {
             throw new IllegalStateException("Tor returned no exit-node addresses");

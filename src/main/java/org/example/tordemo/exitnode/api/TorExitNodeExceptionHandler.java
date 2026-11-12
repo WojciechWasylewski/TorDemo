@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.api;
 
+import org.example.tordemo.exitnode.api.response.InvalidIpv4Response;
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException;
 import org.example.tordemo.exitnode.validation.IPv4;
 import java.time.Instant;

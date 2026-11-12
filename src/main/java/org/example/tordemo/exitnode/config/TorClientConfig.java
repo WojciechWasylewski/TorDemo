@@ -10,7 +10,7 @@ import java.net.http.HttpClient;
 
 @Configuration
 @EnableConfigurationProperties(TorClientProperties.class)
-public class TorClientConfig {
+class TorClientConfig {
 
     @Bean
     public RestClient torRestClient(TorClientProperties properties) {
