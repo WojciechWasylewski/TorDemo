@@ -164,6 +164,22 @@ class TorExitNodeServiceTests {
     }
 
     @Test
+    void shouldNotExtendTtlWhenRefreshReturnsNoAddresses() {
+        when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"))
+                .thenReturn(Set.of());
+        service.refresh();
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(Duration.ofMinutes(20)));
+
+        assertThatThrownBy(service::refresh).isInstanceOf(IllegalStateException.class);
+        assertThat(service.isExitNode("171.25.193.39")).isTrue();
+
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(TTL));
+
+        assertThatThrownBy(() -> service.isExitNode("171.25.193.39"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
+    }
+
+    @Test
     void shouldRenewTtlAfterSuccessfulRefreshEvenWhenAddressesAreUnchanged() {
         when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"));
         service.refresh();
