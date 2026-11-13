@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.service;
 
+import org.example.tordemo.exitnode.exception.InvalidTorResponseException;
 import java.util.HashSet;
 import java.util.Set;
 import java.time.Clock;
@@ -10,6 +11,12 @@ import org.example.tordemo.exitnode.config.TorCacheProperties;
 import org.junit.jupiter.api.BeforeEach;
 
 import org.example.tordemo.exitnode.client.TorExitNodeClient;
+import org.example.tordemo.exitnode.client.TorExitNodeParser;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestClient;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -193,5 +200,31 @@ class TorExitNodeServiceTests {
         when(clock.instant()).thenReturn(refreshedAt.plus(TTL));
         assertThatThrownBy(() -> service.isExitNode("171.25.193.39"))
                 .isInstanceOf(ExitNodesUnavailableException.class);
+    }
+
+    @Test
+    void shouldPreserveSnapshotAndExpiryWhenAnUpstreamAddressIsMalformed() {
+        var builder = RestClient.builder().baseUrl("https://tor.example");
+        var server = MockRestServiceServer.bindTo(builder).build();
+        var realClient = new TorExitNodeClient(builder.build(), new TorExitNodeParser());
+        var realService = new TorExitNodeService(realClient, new TorCacheProperties(TTL), clock);
+        server.expect(requestTo("https://tor.example/exit-addresses"))
+                .andRespond(withSuccess("ExitAddress 171.25.193.39 2026-11-12 12:00:00", MediaType.TEXT_PLAIN));
+        server.expect(requestTo("https://tor.example/exit-addresses"))
+                .andRespond(withSuccess("""
+                        ExitAddress 171.25.193.40 2026-11-12 12:20:00
+                        ExitAddress invalid-address
+                        """, MediaType.TEXT_PLAIN));
+        realService.refresh();
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(Duration.ofMinutes(20)));
+
+        assertThatThrownBy(realService::refresh).isInstanceOf(InvalidTorResponseException.class);
+        assertThat(realService.isExitNode("171.25.193.39")).isTrue();
+        assertThat(realService.isExitNode("171.25.193.40")).isFalse();
+
+        when(clock.instant()).thenReturn(FETCHED_AT.plus(TTL));
+        assertThatThrownBy(() -> realService.isExitNode("171.25.193.39"))
+                .isInstanceOf(ExitNodesUnavailableException.class);
+        server.verify();
     }
 }

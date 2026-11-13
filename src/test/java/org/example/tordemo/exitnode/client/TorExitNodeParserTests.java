@@ -1,10 +1,13 @@
 package org.example.tordemo.exitnode.client;
 
+import org.example.tordemo.exitnode.exception.InvalidTorResponseException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class TorExitNodeParserTests {
 
@@ -44,11 +47,13 @@ class TorExitNodeParserTests {
     }
 
     @ParameterizedTest
+    @NullAndEmptySource
     @ValueSource(strings = {
-            "", "\n\n", "ExitNode relay\nPublished 2026-11-10 06:01:46\nLastStatus 2026-11-10 15:00:00"
+            "\n\n", " ", "ExitNode relay\nPublished 2026-11-10 06:01:46\nLastStatus 2026-11-10 15:00:00",
+            "<html>Upstream unavailable</html>"
     })
-    void shouldReturnAnEmptySetWhenThereAreNoAddressRecords(String response) {
-        assertThat(parser.parse(response)).isEmpty();
+    void shouldRejectResponsesWithoutAddresses(String response) {
+        assertThatThrownBy(() -> parser.parse(response)).isInstanceOf(InvalidTorResponseException.class);
     }
 
     @ParameterizedTest
@@ -67,5 +72,28 @@ class TorExitNodeParserTests {
         String response = "ExitAddress   171.25.193.39   2026-11-10   15:29:00";
 
         assertThat(parser.parse(response)).containsExactly("171.25.193.39");
+    }
+
+    @Test
+    void shouldHandleTabsAndSurroundingWhitespace() {
+        String response = "  ExitAddress\t171.25.193.39\t2026-11-10 15:29:00  \n";
+
+        assertThat(parser.parse(response)).containsExactly("171.25.193.39");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "ExitAddress", "ExitAddress   ", "ExitAddress\t",
+            "ExitAddress invalid-address", "ExitAddress 999.1.2.3",
+            "ExitAddress ::1", "ExitAddress 01.2.3.4"
+    })
+    void shouldRejectTheWholeResponseWhenAnyAddressRecordIsInvalid(String invalidRecord) {
+        String response = "ExitAddress 171.25.193.39 2026-11-10 15:29:00\n"
+                + invalidRecord + "\n"
+                + "ExitAddress 171.25.193.40 2026-11-10 15:29:00\n";
+
+        assertThatThrownBy(() -> parser.parse(response))
+                .isInstanceOf(InvalidTorResponseException.class)
+                .hasMessage("Tor response contains a missing or invalid IPv4 address");
     }
 }
