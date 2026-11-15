@@ -12,7 +12,7 @@ The original recruitment task is preserved in [REQUIREMENTS.md](REQUIREMENTS.md)
 - Jakarta Bean Validation and Apache Commons Validator for IPv4 validation.
 - Spring scheduling for refreshes, Actuator for health, and Springdoc for OpenAPI/Swagger UI.
 - Maven for local builds; a multi-stage Dockerfile for container builds.
-- JUnit, AssertJ, Mockito, MockMvc, and WireMock for tests.
+- Groovy 5 and Spock 2.4 on the JUnit Platform, with MockMvc and WireMock for tests.
 
 No database, Redis, or external cache is required.
 
@@ -137,7 +137,7 @@ Defaults are in [application.yaml](src/main/resources/application.yaml).
 | `tor.client.read-timeout` | `10s` | Response timeout |
 | `tor.cache.refresh-interval` | `10m` | Delay between refresh attempts |
 | `tor.cache.ttl` | `30m` | Maximum usable snapshot age |
-| `tor.cache.refresh-enabled` | `true` when omitted | Enables automatic scheduling; disabled in tests |
+| `tor.cache.refresh-enabled` | `true` when omitted | Enables automatic scheduling; disabled in most tests |
 
 Use duration values such as `5s`, `10m`, or `1h`. TTL and client timeouts must be
 positive. Keep the refresh interval shorter than TTL to allow recovery from
@@ -198,9 +198,14 @@ Integration tests start the real application on a random port and use WireMock
 as the Tor server. They exercise successful lookups, cache reuse, failed and
 unusable refreshes, acceptance of valid addresses from partially malformed feeds,
 expiry, and recovery. A controlled test clock avoids sleeps.
-Scheduling is disabled and refreshes are triggered explicitly; automatic
-scheduler execution is not currently tested. Tests never call the live Tor feed
-and do not require Docker.
+Scheduling is disabled in these cache scenarios and refreshes are triggered
+explicitly. A separate scheduling specification enables it and verifies the
+initial automatic refresh using bounded polling against WireMock; repeated
+execution and exact refresh timing are not tested. Tests never call the live
+Tor feed and do not require Docker.
+
+Configuration tests verify property binding and startup failure for missing
+required values, nonpositive TTL/timeouts, and invalid base URLs.
 
 Application HTTP tests also verify that Swagger UI is available and the health
 endpoint reports `UP` with automatic refreshes disabled.
@@ -208,8 +213,7 @@ endpoint reports `UP` with automatic refreshes disabled.
 ## Improvements with more time
 
 - Add cache-aware readiness while keeping liveness independent of Tor availability.
-- Add focused tests for scheduler wiring, invalid configuration, and concurrent
-  lookups during refresh.
+- Add focused tests for concurrent lookups during refresh.
 - Add metrics for refresh failures, refresh duration, snapshot age, and address count.
 - Document all response codes and examples explicitly in the generated OpenAPI specification.
 - Add CI verification for the Maven build and container startup/health.
