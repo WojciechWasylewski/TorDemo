@@ -104,14 +104,16 @@ specification at [OpenAPI JSON](http://localhost:8080/v3/api-docs).
 - TTL (time to live) defaults to 30 minutes from successful retrieval and parsing.
   At or after expiry, lookups return `503`, rather than classifying addresses
   using stale data.
-- HTTP failures, empty responses, and responses containing no exit addresses reject
-  the update. If any `ExitAddress`
-  record has a missing or invalid IPv4 address, the entire feed update is rejected.
-  This avoids publishing a partial list that could produce false `404` responses.
-  The failure is logged, and the previous snapshot remains usable until its
-  original TTL expires; afterward, lookups return `503`. Failed updates never
-  renew TTL. This favors complete data over availability: even one malformed
-  address record can prevent a refresh.
+- Malformed `ExitAddress` records are skipped, and their count is logged as a
+  warning. If at least one valid address remains, the valid addresses replace the
+  previous snapshot and renew TTL. Previous addresses are not merged into the new
+  set, so removed entries do not remain cached indefinitely. This favors
+  availability over completeness: a skipped record may cause a false `404` for
+  an address omitted from the partial snapshot.
+- HTTP failures, empty responses, and responses containing no valid exit addresses
+  reject the update. The failure is logged, and the previous snapshot remains
+  usable until its original TTL expires; afterward, lookups return `503`.
+  Rejected updates never renew TTL.
 - The parser reads `ExitAddress` records, validates their IPv4 addresses, ignores
   other records, and removes duplicates. Observation timestamps are not used for
   expiration; TTL measures local retrieval age, not the age of Tor's observations.
@@ -194,7 +196,8 @@ validation, status codes, and JSON responses with a mocked service.
 
 Integration tests start the real application on a random port and use WireMock
 as the Tor server. They exercise successful lookups, cache reuse, failed and
-malformed refreshes, expiry, and recovery. A controlled test clock avoids sleeps.
+unusable refreshes, acceptance of valid addresses from partially malformed feeds,
+expiry, and recovery. A controlled test clock avoids sleeps.
 Scheduling is disabled and refreshes are triggered explicitly; automatic
 scheduler execution is not currently tested. Tests never call the live Tor feed
 and do not require Docker.

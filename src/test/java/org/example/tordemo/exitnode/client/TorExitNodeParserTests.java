@@ -87,13 +87,37 @@ class TorExitNodeParserTests {
             "ExitAddress invalid-address", "ExitAddress 999.1.2.3",
             "ExitAddress ::1", "ExitAddress 01.2.3.4"
     })
-    void shouldRejectTheWholeResponseWhenAnyAddressRecordIsInvalid(String invalidRecord) {
+    void shouldSkipMalformedRecordsAndKeepTheValidAddresses(String invalidRecord) {
         String response = "ExitAddress 171.25.193.39 2026-11-10 15:29:00\n"
                 + invalidRecord + "\n"
                 + "ExitAddress 171.25.193.40 2026-11-10 15:29:00\n";
 
+        assertThat(parser.parse(response))
+                .containsExactlyInAnyOrder("171.25.193.39", "171.25.193.40");
+    }
+
+    @Test
+    void shouldRejectAResponseWhenEveryAddressRecordIsMalformed() {
+        String response = """
+                ExitNode relay
+                ExitAddress
+                ExitAddress invalid-address
+                ExitAddress 999.1.2.3
+                """;
+
         assertThatThrownBy(() -> parser.parse(response))
                 .isInstanceOf(InvalidTorResponseException.class)
-                .hasMessage("Tor response contains a missing or invalid IPv4 address");
+                .hasMessage("Tor response contains no valid exit-node addresses");
+    }
+
+    @Test
+    void shouldDeduplicateValidAddressesWhenMalformedRecordsAreSkipped() {
+        String response = """
+                ExitAddress 171.25.193.39 2026-11-10 15:29:00
+                ExitAddress invalid-address
+                ExitAddress 171.25.193.39 2026-11-10 15:30:00
+                """;
+
+        assertThat(parser.parse(response)).containsExactly("171.25.193.39");
     }
 }

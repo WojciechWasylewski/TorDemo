@@ -126,15 +126,15 @@ class TorExitNodesIntegrationTests {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"http-error", "malformed-feed", "empty-body", "no-content"})
+    @ValueSource(strings = {"http-error", "all-malformed-feed", "empty-body", "no-content"})
     void shouldPreserveSnapshotAndOriginalExpiryAfterFailedRefresh(String failure) throws Exception {
         stubFeed(EXIT_ADDRESS);
         refresher.refresh();
         clock.advance(Duration.ofMinutes(20));
         switch (failure) {
             case "http-error" -> stubUpstream(503, "");
-            case "malformed-feed" -> stubUpstream(200,
-                    "ExitAddress " + OTHER_ADDRESS + "\nExitAddress invalid-address");
+            case "all-malformed-feed" -> stubUpstream(200,
+                    "ExitAddress\nExitAddress invalid-address");
             case "empty-body" -> stubUpstream(200, "");
             case "no-content" -> stubUpstream(204, "");
             default -> throw new IllegalArgumentException("Unknown failure: " + failure);
@@ -163,6 +163,28 @@ class TorExitNodesIntegrationTests {
 
         assertEmptyResponse("HEAD", EXIT_ADDRESS, 404);
         assertEmptyResponse("HEAD", OTHER_ADDRESS, 200);
+        clock.advance(Duration.ofMinutes(20));
+        assertEmptyResponse("HEAD", OTHER_ADDRESS, 503);
+        torApi.verify(2, getRequestedFor(urlEqualTo("/exit-addresses")));
+    }
+
+    @Test
+    void shouldPublishValidAddressesAndRenewTtlWhenSomeRecordsAreMalformed() throws Exception {
+        stubFeed(EXIT_ADDRESS);
+        refresher.refresh();
+        clock.advance(Duration.ofMinutes(20));
+        stubUpstream(200, "ExitAddress " + OTHER_ADDRESS + "\nExitAddress invalid-address\nExitAddress");
+
+        refresher.refresh();
+        clock.advance(Duration.ofMinutes(10));
+
+        assertEmptyResponse("HEAD", EXIT_ADDRESS, 404);
+        assertEmptyResponse("HEAD", OTHER_ADDRESS, 200);
+        var response = send("GET", OTHER_ADDRESS);
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(objectMapper.readTree(response.body()).path("requestedIp").asText())
+                .isEqualTo(OTHER_ADDRESS);
+
         clock.advance(Duration.ofMinutes(20));
         assertEmptyResponse("HEAD", OTHER_ADDRESS, 503);
         torApi.verify(2, getRequestedFor(urlEqualTo("/exit-addresses")));
