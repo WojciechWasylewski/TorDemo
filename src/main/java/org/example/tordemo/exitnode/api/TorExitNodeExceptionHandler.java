@@ -22,7 +22,7 @@ public class TorExitNodeExceptionHandler {
             throw exception;
         }
 
-        var response = new InvalidIpv4Response(
+        InvalidIpv4Response response = new InvalidIpv4Response(
                 Instant.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "The IP address must be a valid IPv4 address."

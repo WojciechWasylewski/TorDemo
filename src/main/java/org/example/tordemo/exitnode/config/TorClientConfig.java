@@ -18,7 +18,7 @@ class TorClientConfig {
                 .connectTimeout(properties.connectTimeout())
                 .build();
 
-        var requestFactory = new JdkClientHttpRequestFactory(httpClient);
+        JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
         requestFactory.setReadTimeout(properties.readTimeout());
 
         return RestClient.builder()

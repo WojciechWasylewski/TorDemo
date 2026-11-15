@@ -18,6 +18,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -81,7 +82,7 @@ class TorExitNodesIntegrationTests {
         refresher.refresh();
 
         assertEmptyResponse("HEAD", EXIT_ADDRESS, 200);
-        var response = send("GET", EXIT_ADDRESS);
+        HttpResponse<String> response = send("GET", EXIT_ADDRESS);
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.headers().firstValue("Content-Type").orElseThrow())
                 .startsWith("application/json");
@@ -98,10 +99,10 @@ class TorExitNodesIntegrationTests {
     @Test
     void shouldRejectInvalidInputWithoutFetchingTheFeed() throws Exception {
         assertEmptyResponse("HEAD", "256.1.2.3", 400);
-        var response = send("GET", "256.1.2.3");
+        HttpResponse<String> response = send("GET", "256.1.2.3");
 
         assertThat(response.statusCode()).isEqualTo(400);
-        var error = objectMapper.readTree(response.body());
+        JsonNode error = objectMapper.readTree(response.body());
         assertThat(error.path("status").asInt()).isEqualTo(400);
         assertThat(error.path("message").asText())
                 .isEqualTo("The IP address must be a valid IPv4 address.");
@@ -180,7 +181,7 @@ class TorExitNodesIntegrationTests {
 
         assertEmptyResponse("HEAD", EXIT_ADDRESS, 404);
         assertEmptyResponse("HEAD", OTHER_ADDRESS, 200);
-        var response = send("GET", OTHER_ADDRESS);
+        HttpResponse<String> response = send("GET", OTHER_ADDRESS);
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(objectMapper.readTree(response.body()).path("requestedIp").asText())
                 .isEqualTo(OTHER_ADDRESS);
@@ -201,14 +202,14 @@ class TorExitNodesIntegrationTests {
     }
 
     private HttpResponse<String> send(String method, String address) throws Exception {
-        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/" + address))
+        HttpRequest request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/" + address))
                 .timeout(Duration.ofSeconds(5))
                 .method(method, HttpRequest.BodyPublishers.noBody()).build();
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString());
     }
 
     private void assertEmptyResponse(String method, String address, int status) throws Exception {
-        var response = send(method, address);
+        HttpResponse<String> response = send(method, address);
         assertThat(response.statusCode()).as("%s /%s status", method, address).isEqualTo(status);
         assertThat(response.body()).as("%s /%s body", method, address).isEmpty();
     }

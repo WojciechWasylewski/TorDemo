@@ -19,10 +19,10 @@ class TorExitNodesApplicationTests {
 
     @Test
     void shouldServeSwaggerUi() throws Exception {
-        try (var client = HttpClient.newHttpClient()) {
-            var request = HttpRequest.newBuilder(
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder(
                     URI.create("http://localhost:" + port + "/swagger-ui/index.html")).GET().build();
-            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("Swagger UI");
@@ -31,10 +31,10 @@ class TorExitNodesApplicationTests {
 
     @Test
     void healthEndpointReportsUp() throws Exception {
-        try (var client = HttpClient.newHttpClient()) {
-            var request = HttpRequest.newBuilder(
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder(
                     URI.create("http://localhost:" + port + "/actuator/health")).GET().build();
-            var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             assertThat(response.statusCode()).isEqualTo(200);
             assertThat(response.body()).contains("\"status\":\"UP\"");

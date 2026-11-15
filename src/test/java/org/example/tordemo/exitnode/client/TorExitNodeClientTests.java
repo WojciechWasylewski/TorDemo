@@ -1,6 +1,7 @@
 package org.example.tordemo.exitnode.client;
 
 import java.net.SocketTimeoutException;
+import java.util.Set;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ class TorExitNodeClientTests {
 
     @BeforeEach
     void setUp() {
-        var builder = RestClient.builder().baseUrl("https://tor.example");
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://tor.example");
         server = MockRestServiceServer.bindTo(builder).build();
         client = new TorExitNodeClient(builder.build(), new TorExitNodeParser());
     }
@@ -47,7 +48,7 @@ class TorExitNodeClientTests {
                         ExitAddress 171.25.193.40 2026-11-10 15:00:57
                         """, MediaType.TEXT_PLAIN));
 
-        var addresses = client.fetchExitNodes();
+        Set<String> addresses = client.fetchExitNodes();
 
         assertThat(addresses).containsExactlyInAnyOrder("171.25.193.39", "171.25.193.40");
         server.verify();

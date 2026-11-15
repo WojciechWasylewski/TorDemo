@@ -2,6 +2,8 @@ package org.example.tordemo.exitnode.client;
 
 import org.example.tordemo.exitnode.exception.InvalidTorResponseException;
 import org.junit.jupiter.api.Test;
+
+import java.util.Set;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -28,7 +30,7 @@ class TorExitNodeParserTests {
                 ExitAddress 171.25.193.38 2026-11-10 14:26:19
                 """;
 
-        var addresses = parser.parse(response);
+        Set<String> addresses = parser.parse(response);
 
         assertThat(addresses).containsExactlyInAnyOrder(
                 "171.25.193.39", "171.25.193.40", "171.25.193.38");

@@ -78,7 +78,7 @@ class TorExitNodeServiceTests {
 
     @Test
     void shouldKeepASnapshotIndependentOfTheClientResult() {
-        var addresses = new HashSet<>(Set.of("171.25.193.39"));
+        Set<String> addresses = new HashSet<>(Set.of("171.25.193.39"));
         when(client.fetchExitNodes()).thenReturn(addresses);
         service.refresh();
 
@@ -91,7 +91,7 @@ class TorExitNodeServiceTests {
 
     @Test
     void shouldPreserveThePreviousSnapshotWhenFetchingFails() {
-        var failure = new IllegalStateException("Tor is unavailable");
+        IllegalStateException failure = new IllegalStateException("Tor is unavailable");
         when(client.fetchExitNodes()).thenReturn(Set.of("171.25.193.39"))
                 .thenThrow(failure);
         service.refresh();
@@ -114,7 +114,7 @@ class TorExitNodeServiceTests {
 
     @Test
     void shouldBecomeAvailableAfterAnInitialFetchFailure() {
-        var failure = new IllegalStateException("Tor is unavailable");
+        IllegalStateException failure = new IllegalStateException("Tor is unavailable");
         when(client.fetchExitNodes()).thenThrow(failure)
                 .thenReturn(Set.of("171.25.193.39"));
 
