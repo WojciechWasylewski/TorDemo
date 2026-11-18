@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.client
 
+import org.example.tordemo.exitnode.Ipv4Address
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
@@ -36,10 +37,10 @@ class TorExitNodeClientSpec extends Specification {
                     ''', MediaType.TEXT_PLAIN))
 
         when:
-        Set<String> addresses = client.fetchExitNodes()
+        Set<Ipv4Address> addresses = client.fetchExitNodes()
 
         then:
-        addresses == Set.of('171.25.193.39', '171.25.193.40')
+        addresses == Set.of(new Ipv4Address('171.25.193.39'), new Ipv4Address('171.25.193.40'))
         server.verify()
     }
 

@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.service
 
+import org.example.tordemo.exitnode.Ipv4Address
 import org.example.tordemo.exitnode.client.TorExitNodeClient
 import org.example.tordemo.exitnode.config.TorCacheProperties
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException
@@ -10,8 +11,8 @@ import java.time.Duration
 
 class TorExitNodeServiceSpec extends Specification {
 
-    private static final String EXIT_ADDRESS = '171.25.193.39'
-    private static final String OTHER_ADDRESS = '171.25.193.40'
+    private static final Ipv4Address EXIT_ADDRESS = new Ipv4Address('171.25.193.39')
+    private static final Ipv4Address OTHER_ADDRESS = new Ipv4Address('171.25.193.40')
     private static final Duration TTL = Duration.ofMinutes(30)
 
     private final TorExitNodeClient client = Mock()
@@ -57,7 +58,7 @@ class TorExitNodeServiceSpec extends Specification {
 
     def "keeps a snapshot independent of the mutable client result"() {
         given:
-        Set<String> addresses = new HashSet<>(Set.of(EXIT_ADDRESS))
+        Set<Ipv4Address> addresses = new HashSet<>(Set.of(EXIT_ADDRESS))
         client.fetchExitNodes() >> addresses
         service.refresh()
 

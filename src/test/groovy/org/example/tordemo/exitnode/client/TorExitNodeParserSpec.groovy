@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.client
 
+import org.example.tordemo.exitnode.Ipv4Address
 import org.example.tordemo.exitnode.exception.InvalidTorResponseException
 import spock.lang.Specification
 
@@ -23,10 +24,10 @@ class TorExitNodeParserSpec extends Specification {
             '''
 
         when:
-        Set<String> addresses = parser.parse(response)
+        Set<Ipv4Address> addresses = parser.parse(response)
 
         then:
-        addresses == Set.of('171.25.193.39', '171.25.193.40', '171.25.193.38')
+        addresses == Set.of(new Ipv4Address('171.25.193.39'), new Ipv4Address('171.25.193.40'), new Ipv4Address('171.25.193.38'))
     }
 
     def "returns each address only once across relays"() {
@@ -39,7 +40,7 @@ class TorExitNodeParserSpec extends Specification {
             '''
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'))
     }
 
     def "rejects responses without addresses: #description"() {
@@ -66,7 +67,7 @@ class TorExitNodeParserSpec extends Specification {
                 'ExitAddress 171.25.193.40 2026-11-10 15:00:57'
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39', '171.25.193.40')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'), new Ipv4Address('171.25.193.40'))
 
         where:
         description | lineEnding
@@ -79,7 +80,7 @@ class TorExitNodeParserSpec extends Specification {
         String response = 'ExitAddress   171.25.193.39   2026-11-10   15:29:00'
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'))
     }
 
     def "handles tabs and surrounding whitespace"() {
@@ -87,7 +88,7 @@ class TorExitNodeParserSpec extends Specification {
         String response = '  ExitAddress\t171.25.193.39\t2026-11-10 15:29:00  \n'
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'))
     }
 
     def "skips malformed records and keeps valid addresses: #description"() {
@@ -97,7 +98,7 @@ class TorExitNodeParserSpec extends Specification {
                 'ExitAddress 171.25.193.40 2026-11-10 15:29:00\n'
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39', '171.25.193.40')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'), new Ipv4Address('171.25.193.40'))
 
         where:
         description          | invalidRecord
@@ -136,6 +137,6 @@ class TorExitNodeParserSpec extends Specification {
             '''
 
         expect:
-        parser.parse(response) == Set.of('171.25.193.39')
+        parser.parse(response) == Set.of(new Ipv4Address('171.25.193.39'))
     }
 }

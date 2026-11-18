@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.service;
 
+import org.example.tordemo.exitnode.Ipv4Address;
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException;
 import org.example.tordemo.exitnode.config.TorCacheProperties;
 
@@ -23,7 +24,7 @@ public class TorExitNodeService {
         this.clock = clock;
     }
 
-    public boolean isExitNode(String ipAddress) {
+    public boolean isExitNode(Ipv4Address ipAddress) {
         TorExitNodeSnapshot snapshot = cachedSnapshot;
         if (snapshot == null || !clock.instant().isBefore(snapshot.expiresAt())) {
             throw new ExitNodesUnavailableException();
@@ -32,7 +33,7 @@ public class TorExitNodeService {
     }
 
     synchronized void refresh() {
-        Set<String> updated = Set.copyOf(torExitNodeClient.fetchExitNodes());
+        Set<Ipv4Address> updated = Set.copyOf(torExitNodeClient.fetchExitNodes());
         if (updated.isEmpty()) {
             throw new IllegalStateException("Tor returned no exit-node addresses");
         }

@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.client;
 
+import org.example.tordemo.exitnode.Ipv4Address;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -21,16 +22,16 @@ public class TorExitNodeClient {
         this.torExitNodeParser = torExitNodeParser;
     }
 
-    public Set<String> fetchExitNodes() {
+    public Set<Ipv4Address> fetchExitNodes() {
         String response = torRestClient.get()
                 .uri("/exit-addresses")
                 .accept(MediaType.TEXT_PLAIN)
                 .retrieve()
                 .body(String.class);
 
-        Set<String> torIPAddresses = torExitNodeParser.parse(response);
-        log.info("Successfully fetched {} unique exit-node addresses from Tor API", torIPAddresses.size());
+        Set<Ipv4Address> addresses = torExitNodeParser.parse(response);
+        log.info("Successfully fetched {} unique exit-node addresses from Tor API", addresses.size());
 
-        return torIPAddresses;
+        return addresses;
     }
 }

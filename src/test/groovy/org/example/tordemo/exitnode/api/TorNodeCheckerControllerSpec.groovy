@@ -1,5 +1,6 @@
 package org.example.tordemo.exitnode.api
 
+import org.example.tordemo.exitnode.Ipv4Address
 import org.example.tordemo.exitnode.exception.ExitNodesUnavailableException
 import org.example.tordemo.exitnode.service.TorExitNodeService
 import org.spockframework.spring.SpringBean
@@ -35,7 +36,7 @@ class TorNodeCheckerControllerSpec extends Specification {
                 .andExpect(status().isOk())
 
         then:
-        1 * service.isExitNode(IP_ADDRESS) >> true
+        1 * service.isExitNode(new Ipv4Address(IP_ADDRESS)) >> true
     }
 
     def "returns address details for GET when the address is an exit node"() {
@@ -48,7 +49,7 @@ class TorNodeCheckerControllerSpec extends Specification {
                     ''', JsonCompareMode.STRICT))
 
         then:
-        1 * service.isExitNode(IP_ADDRESS) >> true
+        1 * service.isExitNode(new Ipv4Address(IP_ADDRESS)) >> true
     }
 
     def "returns an empty 404 response for #method when the address is not an exit node"() {
@@ -58,7 +59,7 @@ class TorNodeCheckerControllerSpec extends Specification {
                 .andExpect(content().string(''))
 
         then:
-        1 * service.isExitNode(IP_ADDRESS) >> false
+        1 * service.isExitNode(new Ipv4Address(IP_ADDRESS)) >> false
 
         where:
         method << [HttpMethod.GET, HttpMethod.HEAD]
@@ -71,7 +72,7 @@ class TorNodeCheckerControllerSpec extends Specification {
                 .andExpect(content().string(''))
 
         then:
-        1 * service.isExitNode(IP_ADDRESS) >> { throw new ExitNodesUnavailableException() }
+        1 * service.isExitNode(new Ipv4Address(IP_ADDRESS)) >> { throw new ExitNodesUnavailableException() }
 
         where:
         method << [HttpMethod.GET, HttpMethod.HEAD]
