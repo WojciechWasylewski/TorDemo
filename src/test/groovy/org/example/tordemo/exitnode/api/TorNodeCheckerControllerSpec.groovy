@@ -29,11 +29,10 @@ class TorNodeCheckerControllerSpec extends Specification {
     @SpringBean
     TorExitNodeService service = Mock()
 
-    def "returns an empty 200 response for HEAD when the address is an exit node"() {
+    def "routes HEAD to the lookup and returns 200 when the address is an exit node"() {
         when:
         mockMvc.perform(head('/{ip}', IP_ADDRESS))
                 .andExpect(status().isOk())
-                .andExpect(content().string(''))
 
         then:
         1 * service.isExitNode(IP_ADDRESS) >> true

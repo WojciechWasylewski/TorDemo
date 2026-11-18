@@ -16,7 +16,7 @@ RUN apt-get update \
     && useradd --uid 10001 --gid app --no-create-home --shell /usr/sbin/nologin app
 
 WORKDIR /app
-COPY --from=build --chown=app:app /workspace/target/demo-tor-exit-nodes.jar app.jar
+COPY --from=build --chown=root:root --chmod=0444 /workspace/target/demo-tor-exit-nodes.jar app.jar
 USER app:app
 
 EXPOSE 8080
